@@ -1,0 +1,5 @@
+[database]
+db_host=domain.com
+db_name=database
+db_user=username
+db_pass=l33tp4ssw0rd
