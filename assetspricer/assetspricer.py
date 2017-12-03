@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from pandas_datareader import RemoteDataError
 import pandas_datareader.data as web
 import psycopg2
 import logging
@@ -11,6 +12,7 @@ COL_TICKER_Y = 2
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
 
 class AssetsPricer:
     '''Main class of AssetsPricer '''
@@ -85,7 +87,10 @@ class AssetsPricer:
         if instrument['type'] == 2:
             start_date = end_date - timedelta(days=max_days + 5)
 
-            df = web.DataReader(instrument['ticker_y'], 'yahoo', start_date, end_date)
+            try:
+                df = web.DataReader(instrument['ticker_y'], 'yahoo', start_date, end_date)
+            except RemoteDataError as e:
+                logger.error("RemoteDataError: Unable to read URL.")
 
             for date, daily_prices in df[-max_days:].iterrows():
                 prices[date.date()] = {'open': daily_prices[0], 'close': daily_prices[3],
@@ -108,7 +113,7 @@ class AssetsPricer:
                                    daily_prices['adj_close'], daily_prices['volume']))
                     conn.commit()
                 except Exception as e:
-                    print(e)
+                    logger.error(e)
                     conn.rollback()
             cur.close()
 
